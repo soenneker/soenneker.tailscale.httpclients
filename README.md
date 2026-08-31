@@ -1,43 +1,44 @@
 [![](https://img.shields.io/nuget/v/soenneker.tailscale.httpclients.svg?style=for-the-badge)](https://www.nuget.org/packages/soenneker.tailscale.httpclients/)
 [![](https://img.shields.io/github/actions/workflow/status/soenneker/soenneker.tailscale.httpclients/publish-package.yml?style=for-the-badge)](https://github.com/soenneker/soenneker.tailscale.httpclients/actions/workflows/publish-package.yml)
 [![](https://img.shields.io/nuget/dt/soenneker.tailscale.httpclients.svg?style=for-the-badge)](https://www.nuget.org/packages/soenneker.tailscale.httpclients/)
+[![](https://img.shields.io/github/actions/workflow/status/soenneker/soenneker.tailscale.httpclients/codeql.yml?label=CodeQL&style=for-the-badge)](https://github.com/soenneker/soenneker.tailscale.httpclients/actions/workflows/codeql.yml)
 
 # Soenneker.Tailscale.HttpClients
 
-A .NET thread-safe singleton HttpClient for.
+Provides a cached `HttpClient` configured with Tailscale's API base address and bearer-token authentication.
 
-## Install
+## Installation
 
 ```bash
 dotnet add package Soenneker.Tailscale.HttpClients
 ```
 
-## Quick start
+## Configuration
 
-```csharp
-using Soenneker.Tailscale.HttpClients.Registrars;
-using Microsoft.Extensions.DependencyInjection;
-
-var services = new ServiceCollection();
-var result = services.AddTailscaleOpenApiHttpClientAsSingleton();
+```json
+{
+  "Tailscale": {
+    "ApiKey": "tskey-api-..."
+  }
+}
 ```
 
-Adds `TailscaleOpenApiHttpClient` as a singleton service.
+`ClientBaseUrl`, `AuthHeaderName`, and `AuthHeaderValueTemplate` can override the defaults when using a proxy or a different token scheme. The default base URL is `https://api.tailscale.com/api/v2/`, and the default authorization template is `Bearer {token}`.
 
-## What you get
+## Usage
 
-- `ITailscaleOpenApiHttpClient` — A .NET thread-safe singleton HttpClient for.
-- `TailscaleOpenApiHttpClientRegistrar` — Registers the OpenAPI HttpClient wrapper for dependency injection.
+```csharp
+using Soenneker.Tailscale.HttpClients.Abstract;
+using Soenneker.Tailscale.HttpClients.Registrars;
 
-## API at a glance
+services.AddTailscaleOpenApiHttpClientAsSingleton();
 
-| API | What it does | Result / important behavior |
-| --- | --- | --- |
-| `TailscaleOpenApiHttpClientRegistrar.AddTailscaleOpenApiHttpClientAsSingleton(services)` | Adds `TailscaleOpenApiHttpClient` as a singleton service. | The same service collection, so additional registrations can be chained. |
-| `TailscaleOpenApiHttpClientRegistrar.AddTailscaleOpenApiHttpClientAsScoped(services)` | Adds `TailscaleOpenApiHttpClient` as a scoped service. | The same service collection, so additional registrations can be chained. |
+HttpClient client = await tailscaleHttpClient.Get(cancellationToken);
+HttpResponseMessage response = await client.GetAsync(
+    "tailnet/-/devices",
+    cancellationToken);
 
-## Practical notes
+response.EnsureSuccessStatusCode();
+```
 
-- Reuse the registered client instead of constructing one per operation.
-- Calls that return a cached or singleton value reuse the same instance until the owning service is disposed.
-- Dispose instances you own when their scope ends so held resources can be released.
+The provider owns its cached client. Disposing the provider removes and disposes that client; callers should not dispose the value returned by `Get` independently. Relative request paths should not start with `/`, so they remain under the `/api/v2/` base path.

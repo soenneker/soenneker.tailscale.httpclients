@@ -6,10 +6,20 @@ using System.Threading;
 namespace Soenneker.Tailscale.HttpClients.Abstract;
 
 /// <summary>
-/// A .NET thread-safe singleton HttpClient for 
+/// Provides an authenticated, cached <see cref="HttpClient"/> for Tailscale's API.
 /// </summary>
-public interface ITailscaleOpenApiHttpClient: IDisposable, IAsyncDisposable
+public interface ITailscaleOpenApiHttpClient : IDisposable, IAsyncDisposable
 {
+    /// <summary>
+    /// Removes and disposes the HTTP client owned by this provider.
+    /// </summary>
+    new void Dispose();
+
+    /// <summary>
+    /// Asynchronously removes and disposes the HTTP client owned by this provider.
+    /// </summary>
+    new ValueTask DisposeAsync();
+
     /// <summary>
     /// Returns the configured HTTP client used by the Tailscale OpenAPI HTTP Client.
     /// </summary>

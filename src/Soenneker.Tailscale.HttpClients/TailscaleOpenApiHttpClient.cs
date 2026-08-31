@@ -11,13 +11,13 @@ using Soenneker.Utils.HttpClientCache.Abstract;
 
 namespace Soenneker.Tailscale.HttpClients;
 
-/// <inheritdoc cref="ITailscaleOpenApiHttpClient"/>
 public sealed class TailscaleOpenApiHttpClient : ITailscaleOpenApiHttpClient
 {
     private readonly IHttpClientCache _httpClientCache;
     private readonly IConfiguration _config;
+    private readonly string _cacheKey = $"{nameof(TailscaleOpenApiHttpClient)}-{Guid.NewGuid():N}";
 
-    private const string _prodBaseUrl = "https://api.tailscale.com/api/v2";
+    private const string _prodBaseUrl = "https://api.tailscale.com/api/v2/";
 
     public TailscaleOpenApiHttpClient(IHttpClientCache httpClientCache, IConfiguration config)
     {
@@ -27,7 +27,7 @@ public sealed class TailscaleOpenApiHttpClient : ITailscaleOpenApiHttpClient
 
     public ValueTask<HttpClient> Get(CancellationToken cancellationToken = default)
     {
-        return _httpClientCache.Get(nameof(TailscaleOpenApiHttpClient), (config: _config, baseUrl: _config["Tailscale:ClientBaseUrl"] ?? _prodBaseUrl), static state =>
+        return _httpClientCache.Get(_cacheKey, (config: _config, baseUrl: _config["Tailscale:ClientBaseUrl"] ?? _prodBaseUrl), static state =>
         {
             var apiKey = state.config.GetValueStrict<string>("Tailscale:ApiKey");
             string authHeaderName = state.config["Tailscale:AuthHeaderName"] ?? "Authorization";
@@ -36,7 +36,7 @@ public sealed class TailscaleOpenApiHttpClient : ITailscaleOpenApiHttpClient
 
             return new HttpClientOptions
             {
-                BaseAddress = new Uri(state.baseUrl),
+                BaseAddress = new Uri($"{state.baseUrl.TrimEnd('/')}/"),
                 DefaultRequestHeaders = new Dictionary<string, string>
                 {
                     {authHeaderName, authHeaderValue},
@@ -47,11 +47,11 @@ public sealed class TailscaleOpenApiHttpClient : ITailscaleOpenApiHttpClient
 
     public void Dispose()
     {
-        _httpClientCache.RemoveSync(nameof(TailscaleOpenApiHttpClient));
+        _httpClientCache.RemoveSync(_cacheKey);
     }
 
     public ValueTask DisposeAsync()
     {
-        return _httpClientCache.Remove(nameof(TailscaleOpenApiHttpClient));
+        return _httpClientCache.Remove(_cacheKey);
     }
 }
