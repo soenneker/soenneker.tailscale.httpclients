@@ -11,6 +11,7 @@ using Soenneker.Utils.HttpClientCache.Abstract;
 
 namespace Soenneker.Tailscale.HttpClients;
 
+/// <inheritdoc cref="ITailscaleOpenApiHttpClient" />
 public sealed class TailscaleOpenApiHttpClient : ITailscaleOpenApiHttpClient
 {
     private readonly IHttpClientCache _httpClientCache;
