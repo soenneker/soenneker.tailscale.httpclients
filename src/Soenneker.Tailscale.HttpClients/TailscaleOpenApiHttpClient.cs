@@ -30,7 +30,7 @@ public sealed class TailscaleOpenApiHttpClient : ITailscaleOpenApiHttpClient
     {
         return _httpClientCache.Get(_cacheKey, (config: _config, baseUrl: _config["Tailscale:ClientBaseUrl"] ?? _prodBaseUrl), static state =>
         {
-            var apiKey = state.config.GetValueStrict<string>("Tailscale:ApiKey");
+            var apiKey = state.config.GetStringStrict("Tailscale:ApiKey");
             string authHeaderName = state.config["Tailscale:AuthHeaderName"] ?? "Authorization";
             string authHeaderValueTemplate = state.config["Tailscale:AuthHeaderValueTemplate"] ?? "Bearer {token}";
             string authHeaderValue = authHeaderValueTemplate.Replace("{token}", apiKey, StringComparison.Ordinal);
